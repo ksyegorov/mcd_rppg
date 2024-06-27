@@ -1,0 +1,12 @@
+config = dict()
+config['sample_rate'] = 30
+config['ppg_low_freq'] = 0.4
+config['ppg_high_freq'] = 8
+config['window'] = 300
+config['batch_size'] = 32
+config['num_workers'] = 12
+config['cache_folder'] = '/large/tmp_cache/rppg'
+config['max_chunks'] = 3
+config['width'] = 96
+config['height'] = 96
+config['lr'] = 0.003
