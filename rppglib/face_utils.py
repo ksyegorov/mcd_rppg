@@ -1,28 +1,48 @@
-import mediapipe
+#import mediapipe
 import numpy as np
 import cv2
 from scipy.spatial import ConvexHull
+import matplotlib.pyplot as plt
+import face_alignment
 
-NUM_LANDMARKS = 468
+#NUM_LANDMARKS = 468
+NUM_LANDMARKS = 68
+# class MediaPipeFaceExtractor:
+#     def __init__(self, num_landmarks, min_detection_confidence=0.5, min_tracking_confidence=0.5):
+#         self.num_landmarks = num_landmarks
+#         self.face_mesh = mediapipe.solutions.face_mesh.FaceMesh(max_num_faces=1, min_detection_confidence=min_detection_confidence, min_tracking_confidence=min_tracking_confidence)
+#         self.result_dtype = np.int16
+        
+#     def process_frame(self, frame):
+#         face_results = self.face_mesh.process(frame)
+#         if face_results.multi_face_landmarks is None:
+#             plt.imshow(frame)
+#             plt.show()
+#             assert False, 'No face detected' 
+#         face_landmarks = face_results.multi_face_landmarks[0]
+#         frame_width, frame_height = frame.shape[0], frame.shape[1]
+#         points = np.array([(lm.x, lm.y) for lm in face_landmarks.landmark])
+#         points[:, 0] *= frame_height
+#         points[:, 1] *= frame_width
+#         return points.astype(self.result_dtype)
 
-class MediaPipeFaceExtractor:
-    def __init__(self, num_landmarks, min_detection_confidence=0.5, min_tracking_confidence=0.5):
-        self.num_landmarks = num_landmarks
-        self.face_mesh = mediapipe.solutions.face_mesh.FaceMesh(max_num_faces=1, min_detection_confidence=min_detection_confidence, min_tracking_confidence=min_tracking_confidence)
-        self.result_dtype = np.int16
+class FaceAligmentExtractor:
+    def __init__(self, device='cuda:0'):
+        self.fa = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, device=device)
+        self.prev_preds = np.zeros((68, 2), dtype='int16')
         
     def process_frame(self, frame):
-        face_results = self.face_mesh.process(frame)
-        assert face_results.multi_face_landmarks is not None, 'No face detected' 
-        face_landmarks = face_results.multi_face_landmarks[0]
-        frame_width, frame_height = frame.shape[0], frame.shape[1]
-        points = np.array([(lm.x, lm.y) for lm in face_landmarks.landmark])
-        points[:, 0] *= frame_height
-        points[:, 1] *= frame_width
-        return points.astype(self.result_dtype)
+        preds = self.fa.get_landmarks(frame)
+        if preds is None:
+            preds = self.prev_preds
+        else:
+            preds = preds[0].astype('int16')
+        self.prev_preds = preds
+        return preds
 
 def detect_landmarks(video):
-    lm_detector = MediaPipeFaceExtractor(NUM_LANDMARKS)
+    #lm_detector = MediaPipeFaceExtractor(NUM_LANDMARKS)
+    lm_detector = FaceAligmentExtractor()
     points = list()
     for frame in video:
         lms = lm_detector.process_frame(frame)
@@ -62,6 +82,7 @@ def get_mask(frame, poly_points):
     return mask
 
 def process_video(video):
+    video = video.copy()
     landmarks = detect_landmarks(video)
     bbox = find_bbox(landmarks)
     video = crop_video(video, bbox)

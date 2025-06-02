@@ -52,7 +52,7 @@ def _next_power_of_2(x):
     """Calculate the nearest power of 2."""
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
-def calculate_fft_hr(ppg_signal, fs=30, low_pass=0.50, high_pass=3.0):
+def calculate_fft_hr(ppg_signal, fs=30, low_pass=0.5, high_pass=3.5):
     """
     Taken from https://github.com/ubicomplab/rPPG-Toolbox/blob/main/evaluation/post_process.py
     Calculate heart rate based on PPG using Fast Fourier transform (FFT).
@@ -65,7 +65,7 @@ def calculate_fft_hr(ppg_signal, fs=30, low_pass=0.50, high_pass=3.0):
     mask_pxx = np.take(pxx_ppg, fmask_ppg)
     fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
     return fft_hr
-
+    
 
 def resize_video(video, height, width):
     resized_video = np.zeros((video.shape[0], height, width, 3), dtype=video.dtype)
